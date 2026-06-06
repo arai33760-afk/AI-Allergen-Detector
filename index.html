@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f766e" />
+  <title>AI Allergen Detector</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">🛡️</span>
+      <div>
+        <h1>AI Allergen Detector</h1>
+        <p class="tagline">Scan labels &amp; menus · biomolecule-level allergen screening</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button id="profileBtn" class="ghost-btn is-hidden" type="button">👤 Profile</button>
+      <button id="aboutBtn" class="ghost-btn" type="button">About</button>
+    </div>
+  </header>
+
+  <!-- ===================== ONBOARDING / PROFILE SETUP (first screen) ===================== -->
+  <section id="onboarding" class="onboarding">
+    <div class="onboarding-card panel">
+      <h2 id="onboardTitle" class="onboard-title">Welcome — set up your allergen profile</h2>
+      <p class="panel-sub" id="onboardSub">
+        Tell us which allergens you (or your patient) react to. Pick a broad group, or expand it to
+        choose a specific source/species. We'll save this on your device and escalate alerts for these.
+        You can change it anytime.
+      </p>
+      <fieldset class="person-form">
+        <legend>Your details <span class="hint">(for research records &amp; exports)</span></legend>
+        <div class="person-grid">
+          <label class="fld fld-wide">Full name <span class="req">*</span>
+            <input id="pName" type="text" autocomplete="name" placeholder="e.g. Jhon" required />
+          </label>
+          <label class="fld">Age <span class="req">*</span>
+            <input id="pAge" type="number" min="0" max="120" inputmode="numeric" placeholder="years" required />
+          </label>
+          <label class="fld">Gender <span class="req">*</span>
+            <select id="pGender" required>
+              <option value="">Select…</option>
+              <option>Female</option>
+              <option>Male</option>
+              <option>Other</option>
+              <option>Prefer not to say</option>
+            </select>
+          </label>
+          <label class="fld">Participant / Patient ID <span class="hint">(optional)</span>
+            <input id="pId" type="text" placeholder="e.g. TRIAL-001" />
+          </label>
+          <label class="fld">Contact / email <span class="hint">(optional)</span>
+            <input id="pContact" type="text" autocomplete="email" placeholder="optional" />
+          </label>
+        </div>
+      </fieldset>
+
+      <h3 class="form-section-title">Your allergens</h3>
+      <div class="profile-tools">
+        <input id="profileSearch" type="search" placeholder="Search allergen or species (e.g. cashew, Arachis)…" />
+      </div>
+      <div id="profileTree" class="profile-tree onboarding-tree" role="group" aria-label="Known allergens"></div>
+      <div id="onboardError" class="onboard-error is-hidden" role="alert"></div>
+      <div class="onboard-actions">
+        <span id="profileBadge" class="count-badge is-hidden"></span>
+        <button id="saveProfileBtn" class="primary-btn onboard-save" type="button">Save profile &amp; continue</button>
+      </div>
+      <p class="req-note"><span class="req">*</span> Name, age and gender are required for research records.</p>
+    </div>
+  </section>
+
+  <main class="layout is-hidden" id="mainApp">
+    <!-- ===================== LEFT: INPUT ===================== -->
+    <section class="panel" aria-label="Input">
+      <div id="profileSummary" class="profile-summary is-hidden"></div>
+
+      <h2 class="panel-title">1 · What are you checking?</h2>
+      <div class="seg" role="radiogroup" aria-label="Input type">
+        <button class="seg-btn is-active" data-mode="label" role="radio" aria-checked="true">Packaged label</button>
+        <button class="seg-btn" data-mode="menu" role="radio" aria-checked="false">Restaurant menu / dish</button>
+      </div>
+
+      <h2 class="panel-title">2 · Add the text</h2>
+      <div class="tabs" role="tablist">
+        <button class="tab is-active" data-tab="type" role="tab" aria-selected="true">⌨️ Type / paste</button>
+        <button class="tab" data-tab="scan" role="tab" aria-selected="false">📷 Scan photo</button>
+      </div>
+
+      <div class="tab-body" data-panel="type">
+        <textarea id="textInput" rows="6"
+          placeholder="Paste an ingredients list, a menu, or a dish name. Example: Ingredients: wheat flour, milk solids, peanut oil, soy lecithin, salt."></textarea>
+        <button id="sampleBtn" class="link-btn" type="button">Load an example</button>
+      </div>
+
+      <div class="tab-body is-hidden" data-panel="scan">
+        <label class="file-drop" for="imageInput">
+          <input id="imageInput" type="file" accept="image/*" capture="environment" hidden />
+          <span class="file-drop-icon" aria-hidden="true">🖼️</span>
+          <span>Tap to take a photo or choose a label / menu image</span>
+        </label>
+        <img id="preview" class="preview is-hidden" alt="Selected image preview" />
+        <div id="ocrStatus" class="ocr-status is-hidden"></div>
+        <button id="ocrBtn" class="secondary-btn is-hidden" type="button">Read text from image</button>
+      </div>
+
+      <button id="analyzeBtn" class="primary-btn" type="button">Analyse for allergens</button>
+
+      <details class="settings">
+        <summary>Alerts &amp; accessibility</summary>
+        <label class="check"><input type="checkbox" id="optSound" /> Sound alert on high risk</label>
+        <label class="check"><input type="checkbox" id="optVibrate" checked /> Vibration alert (phone)</label>
+        <label class="check"><input type="checkbox" id="optBigText" /> Larger text</label>
+      </details>
+    </section>
+
+    <!-- ===================== RIGHT: RESULTS ===================== -->
+    <section class="panel" aria-label="Results" aria-live="polite">
+      <div id="verdict" class="verdict verdict-idle">
+        <span class="verdict-light" aria-hidden="true"></span>
+        <div>
+          <strong id="verdictTitle">No analysis yet</strong>
+          <p id="verdictText">Add a label, menu, or dish name and press <em>Analyse</em>.</p>
+        </div>
+      </div>
+
+      <div id="resultsMeta" class="results-meta is-hidden"></div>
+      <div id="cards" class="cards"></div>
+
+      <div id="reasoning" class="reasoning is-hidden">
+        <h3>Why this result?</h3>
+        <ul id="reasoningList"></ul>
+      </div>
+
+      <div id="extractedWrap" class="extracted is-hidden">
+        <h3>Analysed text</h3>
+        <pre id="extractedText"></pre>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===================== HISTORY ===================== -->
+  <section id="historyPanel" class="panel history-panel is-hidden" aria-label="History">
+    <div class="history-head">
+      <h2 class="panel-title">Scan history <span id="historyCount" class="hint"></span></h2>
+      <div class="history-actions">
+        <button id="exportCsvBtn" class="secondary-btn" type="button">⬇ CSV</button>
+        <button id="exportPdfBtn" class="secondary-btn" type="button">⬇ PDF report</button>
+        <button id="clearHistoryBtn" class="link-btn danger" type="button">Clear</button>
+      </div>
+    </div>
+    <div id="historyList" class="history-list"></div>
+    <p class="disclaimer">
+      <strong>Research / educational tool — not a medical device.</strong>
+      Results are screening estimates from a validated allergen database and may miss or
+      over-flag allergens. Always verify with the manufacturer or restaurant. If you have a
+      diagnosed allergy, treat any uncertainty as unsafe.
+    </p>
+  </section>
+
+  <!-- About modal -->
+  <dialog id="aboutModal" class="modal">
+    <h2 class="about-app-name">AI Allergen Detector</h2>
+    <p class="about-credit">Made by Aditya Rai and Team</p>
+    <h3 class="about-subhead">About this app</h3>
+    <p>The AI Allergen Detector screens packaged-food labels and restaurant menus for the
+       major food allergens and links each one to its known allergenic <em>biomolecules</em>
+       (proteins) using a validated database derived from the
+       <strong>WHO/IUIS Allergen Nomenclature</strong> and <strong>AllergenOnline (FARRP)</strong>.</p>
+    <ul>
+      <li><strong>Type or paste</strong> ingredient/menu text for instant, fully-offline analysis.</li>
+      <li><strong>Scan a photo</strong> to read text with on-device OCR (needs internet the first time).</li>
+      <li>Every detection shows the allergen, its protein/biomolecule, scientific class,
+          confidence, severity and database source.</li>
+      <li>History can be exported to <strong>CSV</strong> and <strong>PDF</strong> for research records.</li>
+    </ul>
+    <p id="aboutMeta" class="hint"></p>
+    <form method="dialog"><button class="primary-btn" type="submit">Close</button></form>
+  </dialog>
+
+  <!-- Data + libraries (libraries are optional enhancements; core works without them) -->
+  <script src="database.js"></script>
+  <script src="lib/jspdf.umd.min.js" onerror="window.__noJsPDF=true"></script>
+  <script src="app.js"></script>
+</body>
+</html>
