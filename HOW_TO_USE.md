@@ -22,7 +22,22 @@ No installation, no accounts, no internet required for the core features. 100% f
 | Type / paste text → allergen analysis | ❌ No (always works) |
 | Allergen + biomolecule database | ❌ No (built into the app) |
 | Scan history, CSV export, PDF report | ❌ No |
-| **Photo OCR** (reading text from an image) | ✅ Yes, the *first* time only (downloads the OCR engine, then caches it) |
+| **Photo OCR** (reading text from a label) | ✅ Yes, the *first* time only (downloads the OCR engine, then caches it) |
+| **AI food identification** (recognise a dish from a photo) | ✅ Yes, the *first* time only (downloads the AI model, then caches it) |
+
+### Scanning a photo — two options
+On the **Scan photo** tab, after taking/choosing a picture you get two buttons:
+- **🍽️ Identify food & allergens (AI)** — point at a *dish* (no label needed). An on-device
+  AI model recognises the food and infers its likely allergens. It reliably recognises common
+  foods (pizza, burger, bread, pasta, ice cream, fruit, **crab/lobster and other seafood**).
+  After it guesses, you can **confirm or correct the dish** by choosing/typing the real dish
+  from the built-in list — including a large set of **Vietnamese dishes** (Phở, Bún chả, Bún bò
+  Huế, Gỏi cuốn, Bánh xèo, Bún riêu, Mực, Ốc, Hàu, and many more) with a seafood & high-allergen
+  focus. This makes the AI accurate even for dishes it can't recognise by sight.
+- **🔤 Read label text (OCR)** — for packaged-food ingredient labels; reads the printed text.
+
+The allergen engine also understands Vietnamese seafood ingredients directly — e.g. **nước mắm
+(fish sauce) → Fish**, **mắm tôm (shrimp paste) → Crustacean shellfish**, **mực → Mollusc**.
 
 ---
 

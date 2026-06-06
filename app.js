@@ -127,14 +127,15 @@
        direct match  : high-sev 95 / med-sev 90
        cross-contact : 60
        dish likely   : 72 ; dish possible : 45
-       OCR penalty   : −8 (floor 30)  */
-  function scoreConfidence(kind, severity, fromOcr) {
+       OCR penalty   : −8 ; AI-vision penalty : −12  (floor 30)  */
+  function scoreConfidence(kind, severity, source) {
     let base;
     if (kind === "direct") base = severity === "high" ? 95 : 90;
     else if (kind === "cross_contact") base = 60;
     else if (kind === "dish_likely") base = 72;
     else base = 45;
-    if (fromOcr) base = Math.max(30, base - 8);
+    if (source === "ocr") base = Math.max(30, base - 8);
+    else if (source === "vision") base = Math.max(30, base - 12);
     return base;
   }
   const KIND_RANK = { direct: 4, cross_contact: 3, dish_likely: 2, dish_possible: 1 };
@@ -142,7 +143,10 @@
   function analyze(rawText, opts) {
     const text = normalize(rawText);
     const low = text.toLowerCase();
-    const fromOcr = !!(opts && opts.fromOcr);
+    const source = (opts && opts.source) || "text"; // 'text' | 'ocr' | 'vision'
+    const fromOcr = source === "ocr";
+    const foodHints = (opts && opts.foodHints) || []; // [{name, likely[], possible[], prob}]
+    const hintVerb = (opts && opts.hintVerb) || "AI vision identified"; // or "You selected"
     const dets = new Map(); // groupKey -> detection
 
     function ensureDet(group) {
@@ -205,10 +209,22 @@
       }
     }
 
+    // 2b) food hints from AI vision OR a user-confirmed dish (no text needed)
+    for (const fh of foodHints) {
+      (fh.likely || []).forEach((k) => {
+        const g = GROUP_BY_KEY[k];
+        if (g) noteGroupGeneric(g, "dish_likely", "“" + fh.name + "” is usually made with " + g.label.toLowerCase());
+      });
+      (fh.possible || []).forEach((k) => {
+        const g = GROUP_BY_KEY[k];
+        if (g) noteGroupGeneric(g, "dish_possible", "“" + fh.name + "” may contain " + g.label.toLowerCase());
+      });
+    }
+
     // finalize detections
     const list = Array.from(dets.values()).map((d) => {
       const members = Array.from(d.members.values());
-      const confidence = scoreConfidence(d.kind, d.group.severity, fromOcr);
+      const confidence = scoreConfidence(d.kind, d.group.severity, source);
       const memberNames = members.map((mm) => mm.member.name);
       return {
         group: d.group, kind: d.kind, confidence,
@@ -233,14 +249,17 @@
     else if (list.length) level = "yellow";
 
     const reasons = [];
-    if (!list.length) reasons.push("No known allergen terms, species, dishes, or biomolecules matched the text.");
+    if (foodHints.length) reasons.push(hintVerb + ": " + foodHints.map((f) => f.name + (f.prob ? " (" + Math.round(f.prob * 100) + "%)" : "")).join(", ") + " — allergens inferred from typical recipes.");
+    if (!list.length && !foodHints.length) reasons.push("No known allergen terms, species, dishes, or biomolecules matched the text.");
+    if (!list.length && foodHints.length) reasons.push("No major allergens are typical for the identified food — but AI vision can be wrong, so verify if you have a severe allergy.");
     if (dishHits.length) reasons.push("Recognised dish(es): " + dishHits.map((d) => d.name).join(", ") + " — ingredients inferred from typical recipes.");
     if (list.some((d) => d.kind === "cross_contact")) reasons.push("A precautionary (“may contain / traces”) statement was detected.");
     const prof = list.filter((d) => d.profileHit);
     if (state.profile.size && prof.length) reasons.push("Escalated against YOUR profile: " + prof.map((d) => d.group.label).join(", ") + ".");
     if (fromOcr) reasons.push("Text came from photo OCR — confidence reduced slightly for reading errors.");
+    if (source === "vision") reasons.push("Result is from AI image recognition (no label/text). Treat it as a hint, not a guarantee.");
 
-    return { level, detections: list, reasons, text, fromOcr, dishHits };
+    return { level, detections: list, reasons, text, fromOcr, source, dishHits, foodHints };
   }
 
   // =====================================================================
@@ -277,7 +296,8 @@
     const specSpecies = result.detections.reduce((n, d) => n + d.members.length, 0);
     if (specSpecies) meta.appendChild(el("span", "pill", specSpecies + " specific source(s)"));
     meta.appendChild(el("span", "pill", "mode: " + (state.mode === "menu" ? "menu/dish" : "label")));
-    if (result.fromOcr) meta.appendChild(el("span", "pill", "source: photo OCR"));
+    if (result.source === "ocr") meta.appendChild(el("span", "pill", "source: photo OCR"));
+    if (result.source === "vision") meta.appendChild(el("span", "pill", "source: AI vision"));
     if (state.profile.size) meta.appendChild(el("span", "pill", "profile active"));
 
     const wrap = $("#cards");
@@ -411,7 +431,7 @@
     const list = loadHistory();
     list.unshift({
       id: "scan_" + Date.now(), ts: new Date().toISOString(), level: result.level,
-      mode: state.mode, source: result.fromOcr ? "photo" : "text", status: STATUS_TEXT[result.level],
+      mode: state.mode, source: result.source === "vision" ? "ai_photo" : result.source === "ocr" ? "photo_ocr" : "text", status: STATUS_TEXT[result.level],
       allergens: result.detections.map((d) => ({
         label: d.group.label, severity: d.group.severity, kind: d.kind, confidence: d.confidence,
         inProfile: d.profileHit,
@@ -537,6 +557,169 @@
       status.textContent = text ? "✓ Text extracted. Review and edit below, then Analyse." : "No readable text found.";
       return text;
     } catch (e) { status.textContent = "⚠️ OCR failed. Try a clearer photo, or type the text."; return null; }
+  }
+
+  // =====================================================================
+  //  AI FOOD VISION  (TensorFlow.js MobileNet, loaded from CDN on demand)
+  // =====================================================================
+  /* Maps the model's recognised food labels to allergen inference.
+     Key = a keyword that may appear in MobileNet's className; value = friendly
+     food name + likely/possible allergen group keys. Covers common foods the
+     free in-browser model can recognise. */
+  const VISION_FOOD = [
+    { kw: ["pizza"], name: "Pizza", likely: ["wheat", "milk"], possible: ["soy"] },
+    { kw: ["cheeseburger", "hamburger"], name: "Burger", likely: ["wheat", "milk"], possible: ["egg", "soy", "sesame"] },
+    { kw: ["hotdog", "hot dog"], name: "Hot dog", likely: ["wheat"], possible: ["milk", "soy"] },
+    { kw: ["bagel"], name: "Bagel", likely: ["wheat"], possible: ["sesame", "egg"] },
+    { kw: ["pretzel"], name: "Pretzel", likely: ["wheat"], possible: [] },
+    { kw: ["french loaf", "baguette", "bread"], name: "Bread", likely: ["wheat"], possible: ["milk", "sesame", "soy"] },
+    { kw: ["dough"], name: "Dough", likely: ["wheat"], possible: [] },
+    { kw: ["carbonara"], name: "Pasta carbonara", likely: ["wheat", "egg", "milk"], possible: [] },
+    { kw: ["spaghetti", "pasta", "noodle"], name: "Pasta / noodles", likely: ["wheat"], possible: ["egg", "milk", "soy"] },
+    { kw: ["burrito"], name: "Burrito", likely: ["wheat"], possible: ["milk", "soy"] },
+    { kw: ["pot pie", "potpie"], name: "Pot pie", likely: ["wheat", "milk", "egg"], possible: [] },
+    { kw: ["meat loaf", "meatloaf"], name: "Meatloaf", likely: ["egg"], possible: ["wheat", "milk"] },
+    { kw: ["ice cream", "ice lolly", "icecream"], name: "Ice cream", likely: ["milk"], possible: ["egg", "tree_nut"] },
+    { kw: ["eggnog"], name: "Eggnog", likely: ["egg", "milk"], possible: [] },
+    { kw: ["trifle"], name: "Trifle", likely: ["milk", "egg", "wheat"], possible: ["tree_nut"] },
+    { kw: ["chocolate sauce", "chocolate syrup"], name: "Chocolate sauce", likely: ["milk"], possible: ["soy", "tree_nut"] },
+    { kw: ["waffle"], name: "Waffle", likely: ["wheat", "egg", "milk"], possible: [] },
+    { kw: ["pancake"], name: "Pancake", likely: ["wheat", "egg", "milk"], possible: [] },
+    // Seafood — ImageNet recognises several crustaceans & food fish directly
+    { kw: ["dungeness crab", "rock crab", "fiddler crab", "king crab", "hermit crab", "crab"], name: "Crab", likely: ["shellfish"], possible: ["mollusc"] },
+    { kw: ["american lobster", "spiny lobster", "lobster"], name: "Lobster", likely: ["shellfish"], possible: [] },
+    { kw: ["crayfish", "crawfish"], name: "Crayfish / prawn", likely: ["shellfish"], possible: [] },
+    { kw: ["coho", "salmon", "eel", "sturgeon", "barracouta", "gar", "sea bass"], name: "Fish", likely: ["fish"], possible: [] },
+    { kw: ["sea slug", "conch", "snail", "chiton", "chambered nautilus"], name: "Sea snail / shellfish", likely: ["mollusc"], possible: ["shellfish"] },
+    { kw: ["guacamole"], name: "Guacamole", likely: [], possible: [] },
+    { kw: ["mashed potato"], name: "Mashed potato", likely: [], possible: ["milk"] },
+    { kw: ["consomme", "hot pot", "soup", "broth"], name: "Soup / broth", likely: [], possible: ["celery", "wheat", "fish"] },
+    { kw: ["burrito"], name: "Burrito", likely: ["wheat"], possible: ["milk"] },
+    { kw: ["espresso", "cup", "coffee", "eggnog"], name: "Beverage", likely: [], possible: [] },
+    { kw: ["banana", "orange", "lemon", "strawberry", "pineapple", "fig", "pomegranate", "granny smith", "jackfruit", "custard apple"], name: "Fruit", likely: [], possible: [] },
+    { kw: ["broccoli", "cauliflower", "cabbage", "cucumber", "mushroom", "bell pepper", "zucchini", "artichoke", "cardoon"], name: "Vegetable", likely: [], possible: [] },
+  ];
+
+  let mobilenetLoading = null;
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = src; s.onload = resolve; s.onerror = () => reject(new Error("offline"));
+      document.head.appendChild(s);
+    });
+  }
+  function loadMobilenet() {
+    if (window.__mobilenetModel) return Promise.resolve(window.__mobilenetModel);
+    if (mobilenetLoading) return mobilenetLoading;
+    mobilenetLoading = (async () => {
+      if (!window.tf) await loadScript("https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js");
+      if (!window.mobilenet) await loadScript("https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js");
+      window.__mobilenetModel = await window.mobilenet.load({ version: 2, alpha: 1.0 });
+      return window.__mobilenetModel;
+    })();
+    return mobilenetLoading;
+  }
+
+  // Map raw model predictions to allergen food-hints.
+  function mapPredictionsToHints(predictions) {
+    const hints = [];
+    const seen = new Set();
+    for (const p of predictions) {
+      if (p.probability < 0.08) continue;
+      const cn = p.className.toLowerCase();
+      for (const entry of VISION_FOOD) {
+        if (entry.kw.some((k) => cn.indexOf(k) !== -1)) {
+          if (seen.has(entry.name)) break;
+          seen.add(entry.name);
+          hints.push({ name: entry.name, likely: entry.likely, possible: entry.possible, prob: p.probability });
+          break;
+        }
+      }
+    }
+    return hints;
+  }
+
+  function imageFromFile(file) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = URL.createObjectURL(file);
+    });
+  }
+
+  async function runFoodVision(file) {
+    const status = $("#ocrStatus"); status.classList.remove("is-hidden");
+    status.textContent = "Loading AI food-recognition model… (first time needs internet)";
+    let model; try { model = await loadMobilenet(); } catch (e) {
+      status.textContent = "⚠️ Couldn't load the AI model (needs internet the first time). You can type the dish name instead.";
+      return null;
+    }
+    try {
+      status.textContent = "Looking at the image…";
+      const img = await imageFromFile(file);
+      const preds = await model.classify(img, 5);
+      status.classList.add("is-hidden");
+      return { predictions: preds, hints: mapPredictionsToHints(preds) };
+    } catch (e) {
+      status.textContent = "⚠️ AI vision failed on this image. Try a clearer, closer photo of the food.";
+      return null;
+    }
+  }
+
+  function renderVisionResult(vres) {
+    const box = $("#visionResult");
+    box.classList.remove("is-hidden");
+    let head;
+    if (!vres || !vres.predictions || !vres.predictions.length) {
+      head = '<span class="hint">The AI could not recognise the food.</span>';
+    } else if (vres.hints.length) {
+      head = '<div class="vision-title">🍽️ AI identified:</div><div>' +
+        vres.hints.map((h) => '<span class="ps-chip">' + esc(h.name) + " · " + Math.round(h.prob * 100) + "%</span>").join("") + "</div>";
+    } else {
+      head = '<div class="vision-title">🍽️ AI saw "' + esc(vres.predictions[0].className.split(",")[0]) +
+        '"</div><span class="hint">…but it is not a food I can map. Pick the real dish below.</span>';
+    }
+    // correction control — pick the ACTUAL dish (incl. Vietnamese) from the database
+    const correct =
+      '<div class="vision-correct">' +
+      '<label for="dishCorrect">Wrong, or want to be exact? Choose / type the actual dish:</label>' +
+      '<div class="vision-correct-row">' +
+      '<input id="dishCorrect" list="dishList" autocomplete="off" placeholder="e.g. Phở, Bún chả, Gỏi cuốn, Mực…" />' +
+      '<button id="dishConfirmBtn" class="secondary-btn" type="button">Analyse</button>' +
+      "</div></div>";
+    box.innerHTML = head + correct;
+    const input = $("#dishCorrect");
+    if (vres && vres.hints && vres.hints.length) input.value = vres.hints[0].name;
+    $("#dishConfirmBtn").addEventListener("click", () => confirmDish(input.value));
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); confirmDish(input.value); } });
+  }
+
+  // Look up a dish by its display name or any alias, then analyse it.
+  function findDish(text) {
+    const v = String(text || "").trim().toLowerCase();
+    if (!v) return null;
+    let best = null;
+    for (const d of DB.dishes) {
+      if (d.name.toLowerCase() === v) return d;
+      if (d.aliases.some((a) => a.toLowerCase() === v)) return d;
+      if (!best && (d.name.toLowerCase().indexOf(v) !== -1 || d.aliases.some((a) => v.indexOf(a.toLowerCase()) !== -1 || a.toLowerCase().indexOf(v) !== -1))) best = d;
+    }
+    return best;
+  }
+  function confirmDish(text) {
+    const val = String(text || "").trim();
+    if (!val) { alert("Type or choose a dish first."); return; }
+    const dish = findDish(val);
+    let result;
+    if (dish) {
+      result = analyze("", { source: "text", hintVerb: "You selected dish", foodHints: [{ name: dish.name, likely: dish.likely, possible: dish.possible, prob: null }] });
+    } else {
+      // free text the user typed — run the normal text analysis on it
+      result = analyze(val, { source: "text" });
+    }
+    renderResult(result); recordScan(result);
+    $("#verdict").scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 
   // =====================================================================
@@ -686,8 +869,17 @@
     if (ed) ed.addEventListener("click", () => showOnboarding(true));
   }
 
+  function buildDishDatalist() {
+    if (document.getElementById("dishList")) return;
+    const dl = document.createElement("datalist");
+    dl.id = "dishList";
+    DB.dishes.forEach((d) => { const o = document.createElement("option"); o.value = d.name; dl.appendChild(o); });
+    document.body.appendChild(dl);
+  }
+
   function init() {
     buildProfileTree();
+    buildDishDatalist();
     loadPersonIntoForm();
     updateProfileBadge();
     renderHistory();
@@ -725,7 +917,26 @@
     $("#imageInput").addEventListener("change", (e) => {
       const file = e.target.files && e.target.files[0]; if (!file) return;
       const img = $("#preview"); img.src = URL.createObjectURL(file); img.classList.remove("is-hidden");
-      $("#ocrBtn").classList.remove("is-hidden"); state.pendingFile = file;
+      $("#scanActions").classList.remove("is-hidden");
+      $("#visionResult").classList.add("is-hidden");
+      state.pendingFile = file;
+    });
+    // AI: identify the food/dish and analyse allergens directly (no label needed)
+    $("#visionBtn").addEventListener("click", async () => {
+      if (!state.pendingFile) return;
+      const btn = $("#visionBtn"); btn.disabled = true; const orig = btn.textContent; btn.textContent = "Identifying…";
+      const vres = await runFoodVision(state.pendingFile);
+      btn.disabled = false; btn.textContent = orig;
+      renderVisionResult(vres);
+      if (vres && vres.hints && vres.hints.length) {
+        const result = analyze("", { source: "vision", foodHints: vres.hints });
+        renderResult(result); recordScan(result);
+        $("#verdict").scrollIntoView({ behavior: "smooth", block: "nearest" });
+      } else if (vres && vres.predictions && vres.predictions.length) {
+        // recognised something but not a known food — let user confirm by typing
+        document.querySelector('.tab[data-tab="type"]').click();
+        $("#textInput").value = vres.predictions[0].className.split(",")[0];
+      }
     });
     $("#ocrBtn").addEventListener("click", async () => {
       if (!state.pendingFile) return;

@@ -1507,7 +1507,19 @@ window.ALLERGEN_DB = {
         "basa",
         "hilsa",
         "catla",
-        "bombay duck"
+        "bombay duck",
+        "nuoc mam",
+        "nước mắm",
+        "nuoc cham",
+        "nước chấm",
+        "fish paste",
+        "mam nem",
+        "mắm nêm",
+        "eel",
+        "catfish",
+        "snakehead",
+        "ca basa",
+        "cá basa"
       ],
       "members": [
         {
@@ -1771,7 +1783,18 @@ window.ALLERGEN_DB = {
         "crayfish",
         "krill",
         "scampi",
-        "langoustine"
+        "langoustine",
+        "shrimp paste",
+        "mam tom",
+        "mắm tôm",
+        "mam ruoc",
+        "mắm ruốc",
+        "dried shrimp",
+        "tôm",
+        "tép",
+        "cua",
+        "tôm khô",
+        "tom kho"
       ],
       "members": [
         {
@@ -2137,7 +2160,16 @@ window.ALLERGEN_DB = {
         "escargot",
         "abalone",
         "cuttlefish",
-        "whelk"
+        "whelk",
+        "mực",
+        "ốc",
+        "nghêu",
+        "ngao",
+        "sò",
+        "hàu",
+        "ốc len",
+        "sea snail",
+        "ngheu"
       ],
       "members": [
         {
@@ -3180,6 +3212,538 @@ window.ALLERGEN_DB = {
       ],
       "possible": [
         "soy"
+      ]
+    },
+    {
+      "name": "Phở (beef/chicken noodle soup)",
+      "aliases": [
+        "pho",
+        "phở",
+        "pho bo",
+        "phở bò",
+        "pho ga",
+        "phở gà"
+      ],
+      "likely": [
+        "fish"
+      ],
+      "possible": [
+        "soy",
+        "shellfish"
+      ]
+    },
+    {
+      "name": "Bún chả (grilled pork & noodles)",
+      "aliases": [
+        "bun cha",
+        "bún chả"
+      ],
+      "likely": [
+        "fish"
+      ],
+      "possible": [
+        "shellfish",
+        "soy",
+        "peanut"
+      ]
+    },
+    {
+      "name": "Bánh mì (baguette sandwich)",
+      "aliases": [
+        "banh mi",
+        "bánh mì"
+      ],
+      "likely": [
+        "wheat",
+        "egg"
+      ],
+      "possible": [
+        "soy",
+        "fish",
+        "sesame"
+      ]
+    },
+    {
+      "name": "Gỏi cuốn (fresh spring rolls)",
+      "aliases": [
+        "goi cuon",
+        "gỏi cuốn",
+        "fresh spring roll",
+        "summer roll",
+        "rice paper roll"
+      ],
+      "likely": [
+        "shellfish",
+        "peanut"
+      ],
+      "possible": [
+        "fish",
+        "soy"
+      ]
+    },
+    {
+      "name": "Chả giò / Nem rán (fried spring rolls)",
+      "aliases": [
+        "cha gio",
+        "chả giò",
+        "nem ran",
+        "nem rán",
+        "fried spring roll",
+        "spring roll"
+      ],
+      "likely": [
+        "shellfish"
+      ],
+      "possible": [
+        "egg",
+        "soy",
+        "wheat",
+        "crab"
+      ]
+    },
+    {
+      "name": "Bún bò Huế (spicy beef noodle)",
+      "aliases": [
+        "bun bo hue",
+        "bún bò huế"
+      ],
+      "likely": [
+        "shellfish",
+        "fish"
+      ],
+      "possible": [
+        "soy"
+      ]
+    },
+    {
+      "name": "Mì Quảng (turmeric noodles)",
+      "aliases": [
+        "mi quang",
+        "mì quảng"
+      ],
+      "likely": [
+        "shellfish",
+        "peanut"
+      ],
+      "possible": [
+        "fish",
+        "egg"
+      ]
+    },
+    {
+      "name": "Bánh xèo (sizzling crepe)",
+      "aliases": [
+        "banh xeo",
+        "bánh xèo",
+        "vietnamese pancake",
+        "sizzling cake"
+      ],
+      "likely": [
+        "shellfish"
+      ],
+      "possible": [
+        "fish",
+        "soy"
+      ]
+    },
+    {
+      "name": "Cơm tấm (broken rice)",
+      "aliases": [
+        "com tam",
+        "cơm tấm",
+        "broken rice"
+      ],
+      "likely": [
+        "fish",
+        "egg"
+      ],
+      "possible": [
+        "shellfish",
+        "soy"
+      ]
+    },
+    {
+      "name": "Hủ tiếu (noodle soup)",
+      "aliases": [
+        "hu tieu",
+        "hủ tiếu"
+      ],
+      "likely": [
+        "shellfish",
+        "fish"
+      ],
+      "possible": [
+        "soy",
+        "peanut"
+      ]
+    },
+    {
+      "name": "Bánh cuốn (steamed rice rolls)",
+      "aliases": [
+        "banh cuon",
+        "bánh cuốn"
+      ],
+      "likely": [
+        "fish"
+      ],
+      "possible": [
+        "soy",
+        "wheat"
+      ]
+    },
+    {
+      "name": "Bún riêu (crab noodle soup)",
+      "aliases": [
+        "bun rieu",
+        "bún riêu"
+      ],
+      "likely": [
+        "shellfish",
+        "fish"
+      ],
+      "possible": [
+        "egg",
+        "soy"
+      ]
+    },
+    {
+      "name": "Chả cá (turmeric grilled fish)",
+      "aliases": [
+        "cha ca",
+        "chả cá",
+        "cha ca la vong"
+      ],
+      "likely": [
+        "fish"
+      ],
+      "possible": [
+        "shellfish",
+        "peanut"
+      ]
+    },
+    {
+      "name": "Cá kho tộ (braised fish)",
+      "aliases": [
+        "ca kho",
+        "cá kho",
+        "ca kho to",
+        "braised fish"
+      ],
+      "likely": [
+        "fish"
+      ],
+      "possible": [
+        "soy"
+      ]
+    },
+    {
+      "name": "Lẩu (Vietnamese hotpot)",
+      "aliases": [
+        "lau",
+        "lẩu",
+        "hotpot",
+        "vietnamese hotpot",
+        "lau hai san"
+      ],
+      "likely": [],
+      "possible": [
+        "shellfish",
+        "fish",
+        "mollusc",
+        "soy"
+      ]
+    },
+    {
+      "name": "Gỏi (Vietnamese salad)",
+      "aliases": [
+        "goi",
+        "gỏi",
+        "vietnamese salad",
+        "green papaya salad",
+        "goi du du"
+      ],
+      "likely": [
+        "fish",
+        "peanut"
+      ],
+      "possible": [
+        "shellfish"
+      ]
+    },
+    {
+      "name": "Bánh khọt (mini shrimp pancakes)",
+      "aliases": [
+        "banh khot",
+        "bánh khọt"
+      ],
+      "likely": [
+        "shellfish"
+      ],
+      "possible": [
+        "egg",
+        "fish"
+      ]
+    },
+    {
+      "name": "Bún thịt nướng (grilled pork noodles)",
+      "aliases": [
+        "bun thit nuong",
+        "bún thịt nướng",
+        "grilled pork noodle"
+      ],
+      "likely": [
+        "fish"
+      ],
+      "possible": [
+        "peanut",
+        "shellfish",
+        "soy"
+      ]
+    },
+    {
+      "name": "Bánh canh (thick noodle soup)",
+      "aliases": [
+        "banh canh",
+        "bánh canh"
+      ],
+      "likely": [
+        "fish"
+      ],
+      "possible": [
+        "shellfish",
+        "soy"
+      ]
+    },
+    {
+      "name": "Cao lầu (Hội An noodles)",
+      "aliases": [
+        "cao lau",
+        "cao lầu"
+      ],
+      "likely": [
+        "wheat"
+      ],
+      "possible": [
+        "fish",
+        "shellfish",
+        "soy",
+        "peanut"
+      ]
+    },
+    {
+      "name": "Cua (crab dish)",
+      "aliases": [
+        "cua rang me",
+        "tamarind crab",
+        "cua rang muoi",
+        "vietnamese crab"
+      ],
+      "likely": [
+        "shellfish"
+      ],
+      "possible": [
+        "fish",
+        "soy"
+      ]
+    },
+    {
+      "name": "Tôm (shrimp/prawn dish)",
+      "aliases": [
+        "tom rang",
+        "tôm rang",
+        "tom nuong",
+        "grilled shrimp",
+        "tôm nướng"
+      ],
+      "likely": [
+        "shellfish"
+      ],
+      "possible": [
+        "fish"
+      ]
+    },
+    {
+      "name": "Mực (squid dish)",
+      "aliases": [
+        "muc",
+        "mực",
+        "muc xao",
+        "mực nướng",
+        "grilled squid"
+      ],
+      "likely": [
+        "mollusc"
+      ],
+      "possible": [
+        "fish",
+        "soy"
+      ]
+    },
+    {
+      "name": "Ốc (sea snails)",
+      "aliases": [
+        "oc",
+        "ốc",
+        "ốc len",
+        "ốc hương",
+        "sea snail dish"
+      ],
+      "likely": [
+        "mollusc"
+      ],
+      "possible": [
+        "fish",
+        "peanut"
+      ]
+    },
+    {
+      "name": "Nghêu / Sò (clams)",
+      "aliases": [
+        "ngheu",
+        "nghêu",
+        "ngao",
+        "so diep",
+        "vietnamese clam",
+        "canh ngheu"
+      ],
+      "likely": [
+        "mollusc"
+      ],
+      "possible": [
+        "fish"
+      ]
+    },
+    {
+      "name": "Hàu (oysters)",
+      "aliases": [
+        "hau",
+        "hàu",
+        "hàu nướng",
+        "grilled oyster"
+      ],
+      "likely": [
+        "mollusc"
+      ],
+      "possible": [
+        "shellfish"
+      ]
+    },
+    {
+      "name": "Bò lá lốt (beef in betel leaf)",
+      "aliases": [
+        "bo la lot",
+        "bò lá lốt",
+        "beef betel leaf"
+      ],
+      "likely": [
+        "fish"
+      ],
+      "possible": [
+        "peanut",
+        "shellfish"
+      ]
+    },
+    {
+      "name": "Bánh bao (steamed bun)",
+      "aliases": [
+        "banh bao",
+        "bánh bao",
+        "steamed bun"
+      ],
+      "likely": [
+        "wheat"
+      ],
+      "possible": [
+        "egg",
+        "soy"
+      ]
+    },
+    {
+      "name": "Chè (sweet dessert soup)",
+      "aliases": [
+        "che",
+        "chè",
+        "vietnamese sweet soup"
+      ],
+      "likely": [],
+      "possible": [
+        "peanut",
+        "tree_nut",
+        "soy"
+      ]
+    },
+    {
+      "name": "Xôi (sticky rice)",
+      "aliases": [
+        "xoi",
+        "xôi",
+        "sticky rice"
+      ],
+      "likely": [],
+      "possible": [
+        "peanut",
+        "soy",
+        "tree_nut"
+      ]
+    },
+    {
+      "name": "Bánh tráng trộn (rice-paper salad)",
+      "aliases": [
+        "banh trang tron",
+        "bánh tráng trộn"
+      ],
+      "likely": [
+        "shellfish"
+      ],
+      "possible": [
+        "egg",
+        "peanut",
+        "fish"
+      ]
+    },
+    {
+      "name": "Sa tế (satay chilli sauce)",
+      "aliases": [
+        "sa te",
+        "sa tế",
+        "sate sauce"
+      ],
+      "likely": [
+        "shellfish",
+        "peanut"
+      ],
+      "possible": [
+        "fish"
+      ]
+    },
+    {
+      "name": "Hoisin / Tương (sauce)",
+      "aliases": [
+        "hoisin",
+        "tuong",
+        "tương"
+      ],
+      "likely": [
+        "soy"
+      ],
+      "possible": [
+        "wheat",
+        "peanut",
+        "sesame"
+      ]
+    },
+    {
+      "name": "Cà ri (Vietnamese curry)",
+      "aliases": [
+        "ca ri",
+        "cà ri",
+        "vietnamese curry",
+        "ca ri ga"
+      ],
+      "likely": [],
+      "possible": [
+        "fish",
+        "peanut"
       ]
     }
   ]

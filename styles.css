@@ -166,6 +166,17 @@ textarea:focus, input:focus { outline: 2px solid var(--brand); outline-offset: 1
 .file-drop-icon { font-size: 2rem; }
 .preview { width: 100%; border-radius: 10px; margin-top: 12px; max-height: 260px; object-fit: contain; background: #000; }
 .ocr-status { margin-top: 10px; font-size: .85rem; color: var(--muted); }
+.scan-actions { margin-top: 12px; }
+.scan-actions .scan-btn { width: 100%; margin-top: 8px; }
+.scan-actions .primary-btn.scan-btn { margin-top: 10px; }
+.scan-hint { font-size: .76rem; color: var(--muted); margin: 8px 0 0; }
+.vision-result { margin-top: 12px; background: #f0fdfa; border: 1px solid #99f6e4; border-radius: 10px; padding: 10px 12px; }
+.vision-title { font-size: .8rem; font-weight: 700; color: var(--brand-dark); margin-bottom: 6px; }
+.vision-correct { margin-top: 12px; border-top: 1px dashed #99f6e4; padding-top: 10px; }
+.vision-correct label { display: block; font-size: .78rem; color: var(--muted); margin-bottom: 6px; font-weight: 600; }
+.vision-correct-row { display: flex; gap: 8px; }
+.vision-correct-row input { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; font: inherit; background: #fff; }
+.vision-correct-row .secondary-btn { white-space: nowrap; }
 
 /* ---------- Buttons ---------- */
 .primary-btn {

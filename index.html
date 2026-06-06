@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#0f766e" />
   <title>AI Allergen Detector</title>
   <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=9" />
 </head>
 <body>
   <header class="app-header">
@@ -99,12 +99,17 @@
       <div class="tab-body is-hidden" data-panel="scan">
         <label class="file-drop" for="imageInput">
           <input id="imageInput" type="file" accept="image/*" capture="environment" hidden />
-          <span class="file-drop-icon" aria-hidden="true">🖼️</span>
-          <span>Tap to take a photo or choose a label / menu image</span>
+          <span class="file-drop-icon" aria-hidden="true">📸</span>
+          <span>Tap to take a photo of a <b>dish</b> or a <b>label</b>, or choose an image</span>
         </label>
         <img id="preview" class="preview is-hidden" alt="Selected image preview" />
+        <div id="scanActions" class="scan-actions is-hidden">
+          <button id="visionBtn" class="primary-btn scan-btn" type="button">🍽️ Identify food &amp; allergens (AI)</button>
+          <button id="ocrBtn" class="secondary-btn scan-btn" type="button">🔤 Read label text (OCR)</button>
+          <p class="scan-hint">No label needed for <b>Identify food</b> — point at the dish. Use <b>OCR</b> for packaged ingredient labels.</p>
+        </div>
+        <div id="visionResult" class="vision-result is-hidden"></div>
         <div id="ocrStatus" class="ocr-status is-hidden"></div>
-        <button id="ocrBtn" class="secondary-btn is-hidden" type="button">Read text from image</button>
       </div>
 
       <button id="analyzeBtn" class="primary-btn" type="button">Analyse for allergens</button>
@@ -182,8 +187,9 @@
   </dialog>
 
   <!-- Data + libraries (libraries are optional enhancements; core works without them) -->
-  <script src="database.js"></script>
+  <!-- ?v bumps on each release so browsers fetch the matching version, never a stale cache -->
+  <script src="database.js?v=9"></script>
   <script src="lib/jspdf.umd.min.js" onerror="window.__noJsPDF=true"></script>
-  <script src="app.js"></script>
+  <script src="app.js?v=9"></script>
 </body>
 </html>

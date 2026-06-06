@@ -1,11 +1,11 @@
 /* Offline service worker — caches the app shell so it works without internet
    after the first visit. Only active when served over http(s) (not file://). */
-const CACHE = "allergen-detector-v7";
+const CACHE = "allergen-detector-v9";
 const ASSETS = [
   "index.html",
-  "styles.css",
-  "app.js",
-  "database.js",
+  "styles.css?v=9",
+  "app.js?v=9",
+  "database.js?v=9",
   "manifest.json",
   "icon.svg",
   "lib/jspdf.umd.min.js",
