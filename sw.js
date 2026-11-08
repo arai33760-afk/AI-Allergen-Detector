@@ -1,35 +1,15 @@
-/* Offline service worker — caches the app shell so it works without internet
-   after the first visit. Only active when served over http(s) (not file://). */
-const CACHE = "allergen-detector-v9";
-const ASSETS = [
-  "index.html",
-  "styles.css?v=9",
-  "app.js?v=9",
-  "database.js?v=9",
-  "manifest.json",
-  "icon.svg",
-  "lib/jspdf.umd.min.js",
-];
-
-self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => self.skipWaiting()));
-});
-
-self.addEventListener("activate", (e) => {
-  e.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())
-  );
-});
-
-self.addEventListener("fetch", (e) => {
-  const url = new URL(e.request.url);
-  // Never cache the Tesseract CDN / cross-origin requests; just pass through.
-  if (url.origin !== location.origin) return;
-  e.respondWith(
-    caches.match(e.request).then((hit) => hit || fetch(e.request).then((res) => {
-      const copy = res.clone();
-      caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
-      return res;
-    }).catch(() => caches.match("index.html")))
-  );
+'use strict';
+const PREFIX='allergenguard-v10-';
+const CACHE=PREFIX+'20261109';
+const ASSETS=['./','index.html','styles.css?v=10.1','database.js?v=10.1','catalog.js?v=10.1','engine.js?v=10.1','i18n.js?v=10.1','app.js?v=10.1','manifest.json','icon.svg'];
+self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting())));
+self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>(key.startsWith(PREFIX)||key.startsWith('allergen-detector-'))&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
+self.addEventListener('fetch',event=>{
+ if(event.request.method!=='GET'||new URL(event.request.url).origin!==location.origin)return;
+ const path=new URL(event.request.url).pathname;
+ if(event.request.mode==='navigate'){
+  event.respondWith(fetch(event.request).then(response=>{if(response.ok){const copy=response.clone();event.waitUntil(caches.open(CACHE).then(cache=>cache.put('index.html',copy)));}return response;}).catch(()=>caches.match('index.html')));return;
+ }
+ if(!/\.(js|css|json|svg)$/.test(path))return;
+ event.respondWith(caches.match(event.request).then(cached=>cached||fetch(event.request).then(response=>{if(response.ok){const copy=response.clone();event.waitUntil(caches.open(CACHE).then(cache=>cache.put(event.request,copy)));}return response;})));
 });

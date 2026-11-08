@@ -1,92 +1,44 @@
-# AI Allergen Detector — How to use
+# AllergenGuard 10.1
 
-A self-contained app that screens food labels and restaurant menus for allergens and
-their allergenic **biomolecules (proteins)**, using a validated database built from the
-**WHO/IUIS Allergen Nomenclature** and **AllergenOnline (FARRP)**.
+English and Vietnamese food-allergen screening by Aditya Rai & Team.
 
-No installation, no accounts, no internet required for the core features. 100% free.
+Live app: https://arai33760-afk.github.io/AI-Allergen-Detector/
 
----
+## Try on Android
 
-## ▶ Running it (easiest)
+1. Open the link in Chrome and choose English or Tiếng Việt.
+2. Open Allergy profile. Select a group or individual food; milk reveals casein and whey components. Set record status and optional reaction notes, then save.
+3. Choose Ingredient label for a label, or Menu / dish for a dish name. Paste text and check it against your profile. The example button provides fictional sample text.
+4. For photos, choose the label language, extract text, correct errors, and confirm it against the original label before checking.
 
-1. Open the **`AllergenDetector`** folder.
-2. Double-click **`index.html`**.
-3. It opens in your web browser. That's it.
+Chrome can add a home-screen shortcut. Core text screening works offline after a successful online visit caches the app files. Optional OCR and image models need downloads. This is a web app, not a native APK.
 
-> Tip: Chrome or Edge work best. Everything except photo-OCR works fully offline.
+## Tiếng Việt
 
-### What works offline vs online
-| Feature | Needs internet? |
-|---|---|
-| Type / paste text → allergen analysis | ❌ No (always works) |
-| Allergen + biomolecule database | ❌ No (built into the app) |
-| Scan history, CSV export, PDF report | ❌ No |
-| **Photo OCR** (reading text from a label) | ✅ Yes, the *first* time only (downloads the OCR engine, then caches it) |
-| **AI food identification** (recognise a dish from a photo) | ✅ Yes, the *first* time only (downloads the AI model, then caches it) |
+Chọn Tiếng Việt, mở Hồ sơ dị ứng, chọn nhóm hoặc từng thực phẩm phù hợp với tiền sử, rồi lưu. Chọn Nhãn thành phần khi đọc nhãn, hoặc Thực đơn / món ăn khi chỉ có tên món. Khi dùng ảnh, đối chiếu và sửa chữ nhận dạng với nhãn gốc trước khi kiểm tra.
 
-### Scanning a photo — two options
-On the **Scan photo** tab, after taking/choosing a picture you get two buttons:
-- **🍽️ Identify food & allergens (AI)** — point at a *dish* (no label needed). An on-device
-  AI model recognises the food and infers its likely allergens. It reliably recognises common
-  foods (pizza, burger, bread, pasta, ice cream, fruit, **crab/lobster and other seafood**).
-  After it guesses, you can **confirm or correct the dish** by choosing/typing the real dish
-  from the built-in list — including a large set of **Vietnamese dishes** (Phở, Bún chả, Bún bò
-  Huế, Gỏi cuốn, Bánh xèo, Bún riêu, Mực, Ốc, Hàu, and many more) with a seafood & high-allergen
-  focus. This makes the AI accurate even for dishes it can't recognise by sight.
-- **🔤 Read label text (OCR)** — for packaged-food ingredient labels; reads the printed text.
+## Scope
 
-The allergen engine also understands Vietnamese seafood ingredients directly — e.g. **nước mắm
-(fish sauce) → Fish**, **mắm tôm (shrimp paste) → Crustacean shellfish**, **mực → Mollusc**.
+32 food groups and 100 individual foods, plus custom entries. The list includes Vietnamese seafood, sauces, plant foods, fruits and meats; it is not exhaustive.
 
----
+Named label sources, precautionary statements, ambiguous names and unconfirmed recipe suggestions have separate evidence labels. A negative match does not establish safety. Components are source-linked references, not measurements or diagnoses. Selecting a component does not establish tolerance to others. Lactose intolerance, coeliac disease and sulfite sensitivity are distinguished from food-protein allergy. The app has not undergone clinical validation.
 
-## 🔬 What it does
+## Privacy and records
 
-1. **Profile (optional):** tick the allergens you react to — broad groups *or* expand to a
-   specific source/species (e.g. just *Cashew = Anacardium occidentale*). Your matches are
-   escalated to higher alerts.
-2. **Input:** choose *Packaged label* or *Restaurant menu / dish*, then **type/paste** text
-   or **scan a photo**.
-3. **Analyse:** you get
-   - a 🟢/🟡/🔴 traffic-light verdict,
-   - a card per detected allergen showing the **specific species**, every known
-     **allergenic protein** (e.g. *Ara h 1 — Cupin/7S globulin*), molecular weight,
-     **IgE evidence level**, and a link to the source database entry,
-   - a confidence %, severity, and a plain-English reason.
-4. **History:** every scan is logged locally. Export to **CSV** or a **PDF report** for
-   your research records.
+Profiles, notes and the 50 latest checks stay in this browser; photos are processed locally. Optional model downloads contact external CDNs. Other people using the same browser profile may access its records. Download a JSON backup before clearing browser data. CSV and browser printing/PDF are available. Saved checks retain the original profile but are re-screened with the current catalogue when opened.
 
----
+## References
 
-## 📱 Turning it into an Android app (free, later)
+- WHO/IUIS nomenclature: https://www.allergen.org/
+- Milk caseins: https://www.allergen.org/viewallergen.php?aid=166
+- EAACI diagnosis guidance: https://eaaci.org/guidelines-position-papers/eaaci-guidelines-on-the-diagnosis-of-ige-mediated-food-allergy/
+- FDA labeling explanation (US guidance): https://www.fda.gov/food/nutrition-food-labeling-and-critical-foods/food-allergies
+- Vietnamese adult survey: https://www.worldallergyorganizationjournal.org/article/S1939-4551(20)30005-3/fulltext
 
-The app is a **PWA (Progressive Web App)**, so once it's online you can install it:
+The original molecular database is retained as reference data. The application catalogue corrects milk/egg mappings; the imported database is not independently clinically validated.
 
-1. Put the `AllergenDetector` folder on any free static host
-   (GitHub Pages, Netlify, or Cloudflare Pages — all free).
-2. Open that link in **Chrome on Android** → menu → **Install app / Add to Home screen**.
-3. It now behaves like a native app, works offline, and has its own icon.
+## Development and validation
 
-(A packaged `.apk` can be made later for free with tools like PWABuilder or Capacitor.)
+No build step. Open index.html for text screening, or run node serve.cjs and visit http://127.0.0.1:8765.
 
----
-
-## 🛠 Rebuilding the database (only if your CSVs change)
-
-The app's data lives in `database.js`, generated from your source CSVs by a one-time script:
-
-```
-<python> build/build_database.py
-```
-
-You never need Python to *run* the app — only to regenerate `database.js` after editing
-the allergen database.
-
----
-
-## ⚠️ Important
-
-This is a **research / educational** screening tool, **not a medical device**. It can miss
-or over-flag allergens. Always confirm with the manufacturer or restaurant. If you have a
-diagnosed allergy, treat any uncertainty as unsafe.
+Run node tests/engine.test.cjs and node tests/app.test.cjs: 40 screening checks and 12 DOM/event smoke checks. The latter uses a test adapter, not a visual browser or physical Android. Camera behavior, OCR accuracy and clinical suitability still require user evaluation.
