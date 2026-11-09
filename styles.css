@@ -5,3 +5,6 @@
 .reaction-history{margin:0 0 22px}.reaction-history summary{font-size:13px;color:var(--teal);margin-bottom:10px}.reaction-history textarea{min-height:90px}.panel,.food-group,.workspace>*{min-width:0}.checked-input{font-size:12px;overflow-wrap:anywhere}.checked-input p{white-space:pre-wrap}.history-row>div{min-width:0;overflow-wrap:anywhere}.source-link{display:inline-block;overflow-wrap:anywhere}.report-id{overflow-wrap:anywhere}
 @media(max-width:760px){.header{flex-wrap:wrap}.header-tools .quiet{display:inline-block}.header-tools{margin-left:auto}.card-heading{flex-wrap:wrap}.profile-strip{flex-wrap:wrap}.profile-strip>div{min-width:0;overflow-wrap:anywhere}.profile-footer{padding-bottom:env(safe-area-inset-bottom,0px)}input,select,textarea{font-size:16px}}
 @media print{#printCurrent{display:none!important}.checked-input{display:block}body{font-size:12px}}
+
+/* Editable food suggestions beneath the photo. */
+.dish-review{margin:1rem 0;padding:1rem;border:1px solid var(--line,#cbd5d3);border-radius:12px;background:#f4faf9}.dish-review input{width:100%;margin-bottom:.75rem}.dish-review .button-row:empty{display:none}.dish-review .button-row{flex-wrap:wrap}#visionStatus:not(:empty){margin:.75rem 0;font-weight:600}#preview{max-height:250px;object-fit:contain;width:100%}

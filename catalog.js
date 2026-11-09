@@ -112,5 +112,30 @@
   dish('Pizza','Pizza',['wheat','milk','soy']),dish('Cake','Bánh ngọt',['wheat','egg','milk','tree_nut']),
   dish('Ice cream','Kem',['milk','egg','soy','tree_nut']),dish('Seafood hotpot','Lẩu hải sản',['fish','shellfish','mollusc','soy'],['lau hai san'])
  ];
- root.CLINICAL_CATALOG={version:'2026.11.09',groups,dishes,sources,componentAliases,reviewed:'2026-11-09'};
+ // Restore the previous Indian / Vietnamese menu vocabulary. Every association
+ // remains an uncertain recipe possibility, irrespective of its old ranking.
+ const normal=s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/đ/g,'d').toLowerCase();
+ for(const prior of old?.dishes||[]){
+  const aliases=[prior.name,...prior.aliases];
+  const existing=dishes.find(d=>d.aliases.some(a=>aliases.some(b=>normal(a)===normal(b))));
+  if(existing){existing.aliases=[...new Set([...existing.aliases,...aliases])];continue;}
+  const keys=[...new Set([...(prior.likely||[]),...(prior.possible||[])])].filter(k=>groups.some(g=>g.key===k));
+  dishes.push(dish(prior.name,prior.name,keys,prior.aliases));
+ }
+ const visualRecipes=[
+  ['Dosa','Dosa',['legumes','milk','peanut','coconut'],['dosai','masala dosa']],
+  ['Butter chicken','Gà sốt bơ',['milk','tree_nut'],['murgh makhani']],
+  ['Bread / baguette','Bánh mì baguette',['wheat','milk','egg','sesame','soy'],['french loaf','baguette']],
+  ['Hot dog','Bánh mì xúc xích',['wheat','milk','egg','soy'],['hotdog']],
+  ['Bagel','Bánh bagel',['wheat','sesame','egg'],[]],['Pretzel','Bánh pretzel',['wheat','milk'],[]],
+  ['Pasta carbonara','Mì Ý carbonara',['wheat','egg','milk'],['carbonara']],
+  ['Burrito','Bánh burrito',['wheat','milk','soy'],[]],['Pot pie','Bánh nhân thịt',['wheat','milk','egg'],['potpie']],
+  ['Meatloaf','Thịt nướng khuôn',['egg','wheat','milk'],['meat loaf']],
+  ['Eggnog','Đồ uống trứng sữa',['egg','milk'],[]],['Trifle','Bánh trifle',['milk','egg','wheat','tree_nut'],[]],
+  ['Waffle','Bánh waffle',['wheat','egg','milk'],[]],['Pancake','Bánh pancake',['wheat','egg','milk'],[]],
+  ['Guacamole','Bơ nghiền guacamole',['fruits'],[]],['Mashed potato','Khoai tây nghiền',['vegetables','milk'],[]],
+  ['Soup / broth','Súp / nước dùng',['celery','wheat','fish','soy'],['consomme','broth']]
+ ];
+ for(const args of visualRecipes)if(!dishes.some(d=>d.aliases.some(a=>normal(a)===normal(args[0]))))dishes.push(dish(...args));
+ root.CLINICAL_CATALOG={version:'2026.11.09-v10.2',groups,dishes,sources,componentAliases,reviewed:'2026-11-09'};
 })(typeof window!=='undefined'?window:globalThis);

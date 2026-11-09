@@ -1,6 +1,6 @@
 (function(){
  'use strict';
- const C=window.CLINICAL_CATALOG,E=window.AllergenEngine.create(C),fold=window.AllergenEngine.fold;
+ const C=window.CLINICAL_CATALOG,E=window.AllergenEngine.create(C),fold=window.AllergenEngine.fold,V=window.FoodVision;
  const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const copy=x=>JSON.parse(JSON.stringify(x));
@@ -48,7 +48,7 @@
   document.documentElement.lang=lang;$('#language').value=lang;
   $$('[data-i18n]').forEach(n=>n.textContent=t(n.dataset.i18n));$$('[data-placeholder]').forEach(n=>n.placeholder=t(n.dataset.placeholder));
   $('#sourcesList').innerHTML=Object.values(C.sources).map(s=>`<li><a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.name)}</a></li>`).join('');
-  renderSummary();renderResult(lastResult,lastResultProfile);renderHistory();if(view==='profile')renderCatalog();
+  renderSummary();renderResult(lastResult,lastResultProfile);renderHistory();renderVisionChoices();if(view==='profile')renderCatalog();
   document.title='AllergenGuard · '+t('brandSub');
  }
  function renderSummary(){const names=Object.keys(profile.selections).map(k=>label(group(k).label)).concat(profile.custom.map(c=>c.name));$('#profileSummary').textContent=names.length?`${profile.name||t('anonymous')} · ${names.join(', ')}`:t('noProfile');}
@@ -79,6 +79,7 @@
   if(r.contradictions.length)html+=`<p class="notice">${t('contradiction')}</p>`;
   if(r.mode==='menu')html+=`<p class="hint">${t('recipeNote')}</p>`;
   if(r.source==='ocr')html+=`<p class="hint">${t('ocrNote')}</p>`;
+  if(r.source==='vision'||r.source==='photoConfirmed')html+=`<p class="notice">${t(r.source==='vision'?'visionNote':'dishNote')}</p>`;
   if(!selectedCount(p))html+=`<p class="hint">${t('noProfile')}</p>`;
   html+=`<details class="checked-input"><summary>${t('checkedText')}</summary><p class="evidence">${esc(r.text)}</p></details>`;
   for(const c of r.conditionNotes)html+=`<p class="notice">${t(c+'Note')}</p>`;
@@ -104,6 +105,7 @@
  function setMode(m){mode=m;$('#labelMode').classList.toggle('selected',m==='label');$('#menuMode').classList.toggle('selected',m==='menu');$('#labelMode').setAttribute('aria-pressed',m==='label');$('#menuMode').setAttribute('aria-pressed',m==='menu');}
  function runAnalysis(){
   const text=$('#textInput').value.trim();if(!text){notice(t('emptyInput'));return;}
+  if(source==='vision'||source==='photoConfirmed')setMode('menu');
   if(source==='ocr'&&!$('#confirmOcr').checked){notice(t('confirmFirst'));return;}
   notice('');lastResult=E.analyze(text,profile,{mode,source});lastResult.checkedAt=new Date().toISOString();lastResultProfile=copy(profile);renderResult(lastResult,lastResultProfile);
   history.unshift({id:Date.now(),time:new Date().toISOString(),text,mode,source,profile:copy(profile),version:C.version});history=history.slice(0,50);write(KEYS.history,history);
@@ -117,15 +119,15 @@
  function legacyData(){return {profile:read('allergen_profile_v2',[]),person:read('allergen_person_v1',{}),history:read('allergen_history_v1',[])};}
  const scripts=new Map();
  function loadScript(url,timeout=45000){if(scripts.has(url))return scripts.get(url);const promise=new Promise((resolve,reject)=>{const s=document.createElement('script');const timer=setTimeout(()=>{s.remove();scripts.delete(url);reject(Error('timeout'));},timeout);s.src=url;s.onload=()=>{clearTimeout(timer);resolve();};s.onerror=()=>{clearTimeout(timer);s.remove();scripts.delete(url);reject(Error('load'));};document.head.append(s);});scripts.set(url,promise);return promise;}
- async function resized(file){const url=URL.createObjectURL(file);try{const image=new Image();image.src=url;await image.decode();const ratio=Math.min(1,1800/Math.max(image.width,image.height));const canvas=document.createElement('canvas');canvas.width=Math.round(image.width*ratio);canvas.height=Math.round(image.height*ratio);canvas.getContext('2d').drawImage(image,0,0,canvas.width,canvas.height);return canvas;}finally{URL.revokeObjectURL(url);}}
+ async function resized(file,maxSide=1800){const url=URL.createObjectURL(file);try{const image=new Image();image.src=url;await image.decode();const ratio=Math.min(1,maxSide/Math.max(image.width,image.height));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(image.width*ratio));canvas.height=Math.max(1,Math.round(image.height*ratio));canvas.getContext('2d').drawImage(image,0,0,canvas.width,canvas.height);return canvas;}finally{URL.revokeObjectURL(url);}}
  let worker=null,workerLanguage='',ocrGeneration=0,idleTimer=null,activeTimer=null;
- function setBusy(b){busy=b;$('#ocrBtn').disabled=b||!photo;$('#visionBtn').disabled=b||!photo;$('#imageInput').disabled=b;$('#ocrLanguage').disabled=b;}
+ function setBusy(b){busy=b;$('#ocrBtn').disabled=b||!photo;$('#visionBtn').disabled=b||!photo;$('#imageInput').disabled=b;$('#ocrLanguage').disabled=b;$('#dishConfirmBtn').disabled=b;$('#dishCorrect').disabled=b;$('#analyzeBtn').disabled=b;}
  async function releaseWorker(){clearTimeout(idleTimer);const w=worker;worker=null;workerLanguage='';if(w)try{await w.terminate();}catch{}}
  async function cancelOcr(){ocrGeneration++;clearTimeout(activeTimer);await releaseWorker();setBusy(false);$('#cancelOcr').hidden=true;$('#ocrStatus').textContent=t('cancelled');}
- async function runOcr(){if(!photo||busy)return;setBusy(true);$('#cancelOcr').hidden=false;const generation=++ocrGeneration;$('#ocrStatus').textContent=t('loading');clearTimeout(idleTimer);
+ async function runOcr(){if(!photo||busy)return;releaseVision();clearPhotoResult();setBusy(true);$('#cancelOcr').hidden=false;const generation=++ocrGeneration;$('#ocrStatus').textContent=t('loading');clearTimeout(idleTimer);
   activeTimer=setTimeout(()=>{if(generation===ocrGeneration)cancelOcr();},120000);
   try{
-   await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js');if(generation!==ocrGeneration)return;
+   if(!window.Tesseract)await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js');if(generation!==ocrGeneration)return;
    const wanted=$('#ocrLanguage').value;if(worker&&workerLanguage!==wanted)await releaseWorker();
    if(!worker){const created=await Tesseract.createWorker(wanted,1,{logger:m=>{if(generation===ocrGeneration)$('#ocrStatus').textContent=t(m.status==='recognizing text'?'reading':'loading')+(m.status==='recognizing text'?' '+Math.round(m.progress*100)+'%':'');}});if(generation!==ocrGeneration){await created.terminate();return;}worker=created;workerLanguage=wanted;}
    const canvas=await resized(photo);if(generation!==ocrGeneration)return;const {data}=await worker.recognize(canvas);canvas.width=canvas.height=1;if(generation!==ocrGeneration)return;
@@ -134,13 +136,38 @@
   }catch{if(generation===ocrGeneration){$('#ocrStatus').textContent=t('ocrFailed');await releaseWorker();}}
   finally{if(generation===ocrGeneration){clearTimeout(activeTimer);setBusy(false);$('#cancelOcr').hidden=true;idleTimer=setTimeout(releaseWorker,60000);}}
  }
- async function runVision(){if(!photo||busy)return;setBusy(true);$('#visionStatus').textContent=t('loading');let model,timer,expired=false;
-  try{await releaseWorker();await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js');await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js');
-   const loading=mobilenet.load({version:2,alpha:0.5}).then(m=>{if(expired){m.dispose();throw Error('timeout');}return m;});
-   model=await Promise.race([loading,new Promise((_,reject)=>{timer=setTimeout(()=>{expired=true;reject(Error('timeout'));},45000);})]);clearTimeout(timer);
-   const canvas=await resized(photo);const predictions=await model.classify(canvas,1);canvas.width=canvas.height=1;
-   $('#visionStatus').textContent=t('visionConfirm')+(predictions[0]?.className||'?');setMode('menu');source='text';$('#ocrReview').hidden=true;
-  }catch{$('#visionStatus').textContent=t('visionFailed');}finally{clearTimeout(timer);model?.dispose();setBusy(false);}
+ let visionModel=null,visionGeneration=0,visionTimer=null,visionIdle=null,visionChoices=[];
+ function releaseVision(){clearTimeout(visionIdle);V.dispose(visionModel);visionModel=null;}
+ function renderVisionChoices(){
+  $('#visionChoices').innerHTML=visionChoices.map((c,i)=>`<button type="button" class="secondary" data-vision-choice="${i}">${esc(label(c.label))}</button>`).join('');
+  $('#dishList').innerHTML=C.dishes.map(d=>`<option value="${esc(label(d.label))}"></option>`).join('');
+ }
+ function clearPhotoResult(){
+  visionChoices=[];renderVisionChoices();$('#dishCorrect').value='';$('#visionResult').hidden=!photo;$('#visionStatus').textContent='';$('#ocrStatus').textContent='';
+  $('#textInput').value='';source='text';$('#ocrReview').hidden=true;lastResult=null;renderResult(null);updateCount();
+ }
+ function useDish(text,confirmed=false){
+  text=text.trim().slice(0,200);if(!text){notice(t('dishRequired'));return;}
+  $('#textInput').value=text;source=confirmed?'photoConfirmed':'vision';setMode('menu');$('#ocrReview').hidden=true;updateCount();runAnalysis();
+ }
+ function cancelVision(){visionGeneration++;clearTimeout(visionTimer);setBusy(false);$('#cancelVision').hidden=true;$('#visionStatus').textContent=t('visionCancelled');}
+ async function runVision(){
+  if(!photo||busy)return;clearPhotoResult();setBusy(true);$('#cancelVision').hidden=false;$('#visionStatus').textContent=t('visionLoading');
+  const generation=++visionGeneration,active=()=>generation===visionGeneration;let model=visionModel,canvas=null;visionModel=null;clearTimeout(visionIdle);
+  visionTimer=setTimeout(()=>{if(active()){cancelVision();$('#visionStatus').textContent=t('visionFailed');}},120000);
+  try{
+   await releaseWorker();if(!active())return;
+   if(!window.tf)await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js');if(!active())return;
+   if(!window.mobilenet)await loadScript('https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@2.1.1/dist/mobilenet.min.js');if(!active())return;
+   if(!model)model=await window.mobilenet.load(V.modelConfig);if(!active())return;
+   $('#visionStatus').textContent=t('visionReading');canvas=await resized(photo,1024);if(!active())return;
+   const predictions=await model.classify(canvas,V.topK);if(!active())return;
+   visionChoices=V.mapPredictions(predictions);renderVisionChoices();
+   if(visionChoices.length){const first=visionChoices[0];$('#dishCorrect').value=label(first.label);useDish(first.text);$('#visionStatus').textContent=t('visionReady');}
+   else $('#visionStatus').textContent=t('visionUnknown');
+   visionModel=model;model=null;visionIdle=setTimeout(releaseVision,60000);
+  }catch{if(active())$('#visionStatus').textContent=t('visionFailed');}
+  finally{if(canvas)canvas.width=canvas.height=1;V.dispose(model);if(active()){clearTimeout(visionTimer);setBusy(false);$('#cancelVision').hidden=true;}}
  }
  function updateCount(){$('#charCount').textContent=`${$('#textInput').value.length.toLocaleString()} / 20,000`;}
  $$('[data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view));$('#editProfile').onclick=()=>setView('profile');
@@ -159,18 +186,21 @@
  $('#saveProfile').onclick=()=>{profile=cleanProfile(draft);draft=copy(profile);const ok=write(KEYS.profile,profile);renderSummary();lastResult=null;renderResult(null);setView('screen');if(ok)notice(t('saved'));};
  $('#labelMode').onclick=()=>setMode('label');$('#menuMode').onclick=()=>setMode('menu');
  $('#exampleBtn').onclick=()=>{$('#textInput').value=mode==='menu'?'Gỏi cuốn':lang==='vi'?'Thành phần: bột sữa, đường, casein. Có thể chứa đậu phộng và mè.':'Ingredients: milk powder, sugar, casein. May contain peanuts and sesame.';source='text';$('#ocrReview').hidden=true;updateCount();};
- $('#textInput').oninput=()=>{if(source==='ocr')$('#confirmOcr').checked=false;updateCount();};$('#analyzeBtn').onclick=runAnalysis;
- $('#imageInput').onchange=e=>{const f=e.target.files[0];if(previewUrl)URL.revokeObjectURL(previewUrl);photo=null;$('#preview').hidden=true;
+ $('#textInput').oninput=()=>{if(source==='ocr')$('#confirmOcr').checked=false;else source='text';updateCount();};$('#analyzeBtn').onclick=runAnalysis;
+ $('#imageInput').onchange=e=>{const f=e.target.files[0];if(previewUrl)URL.revokeObjectURL(previewUrl);previewUrl=null;photo=null;$('#preview').hidden=true;clearPhotoResult();
   if(!f){setBusy(false);return;}if(f.size>15*1024*1024||!/^image\/(jpeg|png|webp|bmp)$/.test(f.type)){notice(t('fileError'));e.target.value='';setBusy(false);return;}
-  photo=f;previewUrl=URL.createObjectURL(f);$('#preview').src=previewUrl;$('#preview').hidden=false;$('#preview').alt=t('choosePhoto');setBusy(false);notice('');
+  photo=f;previewUrl=URL.createObjectURL(f);$('#preview').src=previewUrl;$('#preview').hidden=false;$('#preview').alt=t('choosePhoto');$('#visionResult').hidden=false;setBusy(false);notice('');
  };
- $('#ocrBtn').onclick=runOcr;$('#cancelOcr').onclick=cancelOcr;$('#visionBtn').onclick=runVision;
+ $('#ocrBtn').onclick=runOcr;$('#cancelOcr').onclick=cancelOcr;$('#visionBtn').onclick=runVision;$('#cancelVision').onclick=cancelVision;
+ $('#visionChoices').onclick=e=>{const b=e.target.closest('[data-vision-choice]');if(!b||busy)return;const choice=visionChoices[Number(b.dataset.visionChoice)];if(choice){$('#dishCorrect').value=label(choice.label);useDish(choice.text);}};
+ $('#dishConfirmBtn').onclick=()=>useDish($('#dishCorrect').value,true);
+ $('#dishCorrect').onkeydown=e=>{if(e.key==='Enter'&&!busy){e.preventDefault();useDish(e.target.value,true);}};
  $('#historyList').onclick=e=>{const b=e.target.closest('[data-history]');if(!b)return;const h=history[Number(b.dataset.history)];lastResultProfile=cleanProfile(h.profile);lastResult=E.analyze(h.text,lastResultProfile,{mode:h.mode,source:h.source});lastResult.checkedAt=h.time;$('#textInput').value=h.text;source=h.source;setMode(h.mode);$('#ocrReview').hidden=source!=='ocr';$('#confirmOcr').checked=false;updateCount();setView('screen');renderResult(lastResult,lastResultProfile);notice((lastResultProfile.name||t('anonymous'))+' · '+new Date(h.time).toLocaleString(lang==='vi'?'vi-VN':'en-GB'));};
  $('#exportCsv').onclick=exportCsv;$('#printReport').onclick=()=>window.print();$('#clearHistory').onclick=()=>{if(confirm(t('clearConfirm'))){history=[];write(KEYS.history,history);renderHistory();}};
  $('#backupData').onclick=()=>download('AllergenGuard_backup.json',JSON.stringify({app:'AllergenGuard',schema:3,created:new Date().toISOString(),profile,history,legacy:legacyData()},null,2),'application/json');
  $('#restoreData').onchange=async e=>{try{const f=e.target.files[0];if(!f)return;if(f.size>5*1024*1024)throw Error();const data=JSON.parse(await f.text());if(data.app!=='AllergenGuard'||data.schema!==3||!data.profile||!Array.isArray(data.history))throw Error();if(!confirm(t('restoreConfirm')))return;profile=cleanProfile(data.profile);draft=copy(profile);history=data.history.filter(h=>h&&typeof h.text==='string'&&h.text.length<=20000&&['label','menu'].includes(h.mode)&&!isNaN(Date.parse(h.time))).slice(0,50).map(h=>({...h,profile:cleanProfile(h.profile)}));const a=write(KEYS.profile,profile),b=write(KEYS.history,history);translate();if(a&&b)notice(t('restored'));}catch{notice(t('badBackup'));}finally{e.target.value='';}};
  $('#textSize').onclick=()=>document.body.classList.toggle('big');
- window.addEventListener('pagehide',()=>{releaseWorker();if(previewUrl)URL.revokeObjectURL(previewUrl);});
+ window.addEventListener('pagehide',()=>{ocrGeneration++;visionGeneration++;clearTimeout(activeTimer);clearTimeout(visionTimer);releaseWorker();releaseVision();if(previewUrl)URL.revokeObjectURL(previewUrl);});
  translate();if(migrated)notice(t('legacy'));
  if('serviceWorker'in navigator&&/^https?:$/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(()=>{});
 })();

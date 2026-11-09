@@ -1,7 +1,7 @@
 'use strict';
 const PREFIX='allergenguard-v10-';
-const CACHE=PREFIX+'20261109';
-const ASSETS=['./','index.html','styles.css?v=10.1','database.js?v=10.1','catalog.js?v=10.1','engine.js?v=10.1','i18n.js?v=10.1','app.js?v=10.1','manifest.json','icon.svg'];
+const CACHE=PREFIX+'20261109-vision-10.2';
+const ASSETS=['./','index.html','styles.css?v=10.2','database.js?v=10.2','catalog.js?v=10.2','engine.js?v=10.2','i18n.js?v=10.2','vision.js?v=10.2','app.js?v=10.2','manifest.json','icon.svg'];
 self.addEventListener('install',event=>event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting())));
 self.addEventListener('activate',event=>event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>(key.startsWith(PREFIX)||key.startsWith('allergen-detector-'))&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())));
 self.addEventListener('fetch',event=>{

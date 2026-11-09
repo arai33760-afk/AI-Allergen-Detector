@@ -6,3 +6,25 @@ window.APP_TEXT.menuNamed=["Named in dish — ingredients unconfirmed","Tên tro
 window.APP_TEXT.checkedText=["Text checked","Văn bản đã kiểm tra"];
 window.APP_TEXT.reactionNotes=["Reaction history / clinician notes (optional)","Tiền sử phản ứng / ghi chú bác sĩ (tùy chọn)"];
 window.APP_TEXT.reactionPlaceholder=["Food, symptoms, timing and any clinician advice. Saved only in this browser.","Thực phẩm, triệu chứng, thời điểm và lời khuyên bác sĩ. Chỉ lưu trong trình duyệt này."];
+
+Object.assign(window.APP_TEXT,{
+ checkFood:['Add a food or label','Thêm món ăn hoặc nhãn'],
+ photo:['Scan a food or label photo','Quét ảnh món ăn hoặc nhãn'],
+ choosePhoto:['Take or choose a food / label photo (up to 15 MB)','Chụp hoặc chọn ảnh món ăn / nhãn (tối đa 15 MB)'],
+ identify:['Recognize dish','Nhận diện món ăn'],
+ visionHint:['AI suggests a food category and screens possible allergens. For Indian and Vietnamese dishes, confirm the exact local name below. First use needs internet to download the model; photos stay on this device.','AI gợi ý loại thực phẩm và sàng lọc dị nguyên có thể có. Với món Ấn Độ và Việt Nam, xác nhận tên món cụ thể bên dưới. Lần đầu cần mạng để tải mô hình; ảnh ở lại trên thiết bị.'],
+ visionLoading:['Loading food recognition… The first download may take a minute.','Đang tải nhận diện thực phẩm… Lần đầu có thể mất khoảng một phút.'],
+ visionReading:['Looking for food in your photo…','Đang nhận diện thực phẩm trong ảnh…'],
+ visionReady:['Food suggestions are ready. The first suggestion was screened below. Confirm or correct the dish name.','Đã có gợi ý thực phẩm. Gợi ý đầu đã được sàng lọc bên dưới. Hãy xác nhận hoặc sửa tên món.'],
+ visionUnknown:['No reliable food suggestion. Try a closer photo, or enter the exact dish name below.','Chưa có gợi ý thực phẩm đáng tin cậy. Thử chụp gần hơn hoặc nhập tên món bên dưới.'],
+ visionFailed:['Recognition could not finish. Check your internet connection and try again, or enter the dish name below.','Nhận diện chưa hoàn tất. Kiểm tra mạng rồi thử lại hoặc nhập tên món bên dưới.'],
+ visionCancelled:['Recognition cancelled. You can retry or enter the dish name below.','Đã hủy nhận diện. Bạn có thể thử lại hoặc nhập tên món bên dưới.'],
+ dishSuggestions:['Food suggestions — check the name','Gợi ý thực phẩm — kiểm tra tên món'],
+ dishCorrect:['Confirm or correct the exact dish','Xác nhận hoặc sửa tên món cụ thể'],
+ dishPlaceholder:['e.g. Bánh mì, butter chicken, dosa','Ví dụ: Bánh mì, butter chicken, dosa'],
+ dishConfirm:['Use this dish & check my profile','Dùng tên món này và kiểm tra hồ sơ'],
+ dishRequired:['Enter the dish name to check it.','Nhập tên món để kiểm tra.'],
+ visionNote:['Based on an unconfirmed photo suggestion. Possible ingredients are inferred from the food name; the photo has not verified them. Correct the dish name if needed.','Dựa trên gợi ý ảnh chưa xác nhận. Thành phần có thể có được suy ra từ tên thực phẩm; ảnh chưa xác minh thành phần. Hãy sửa tên món nếu cần.'],
+ dishNote:['Based on the dish name you confirmed. Its recipe, sauces and preparation still need verification.','Dựa trên tên món bạn đã xác nhận. Vẫn cần xác minh công thức, nước chấm và cách chế biến.'],
+ emptyText:['Add your allergy profile, then recognize a food photo, read a label, or enter a dish name.','Thêm hồ sơ dị ứng, rồi nhận diện ảnh món ăn, đọc nhãn hoặc nhập tên món.']
+});
