@@ -1,4 +1,4 @@
-# AllergenGuard 10.2
+# AllergenGuard 10.3
 
 English and Vietnamese food-allergen screening by Aditya Rai & Team.
 
@@ -9,8 +9,9 @@ Live app: https://arai33760-afk.github.io/AI-Allergen-Detector/
 1. Open the link in Chrome and choose English or Tiếng Việt.
 2. Open Allergy profile. Select a group or individual food; milk reveals casein and whey components. Set record status and optional reaction notes, then save.
 3. Choose Ingredient label for a label, or Menu / dish for a dish name. Paste text and check it against your profile. The example button provides fictional sample text.
-4. For food photos, open **Scan a food or label photo**, choose an image, then tap **Recognize dish**. AI suggests up to three broad food categories and screens the first against your profile. Confirm or correct the exact dish name, such as **Bánh mì**, then tap **Use this dish & check my profile**. The local menu vocabulary includes Indian and Vietnamese dishes.
-5. For labels or printed menus, expand **Read label text**, choose the printed language, extract text, correct errors, and confirm it against the original before checking. Choose **Menu / dish** if the text is a menu rather than an ingredient list.
+4. Under **Scan a dish, menu or label**, tap **Take photo** to request the phone's rear camera, or **Choose from gallery** for an existing image. Take/confirm your photo to return to the app. Cancelling keeps the previous photo and result. On devices without camera capture support, the browser may show a file chooser instead.
+5. For food photos, tap **Recognize dish**. AI suggests up to three broad food categories and screens the first against your profile. Confirm or correct the exact dish name, such as **Bánh mì**, then tap **Use this dish & check my profile**. The local menu vocabulary includes Indian and Vietnamese dishes.
+6. For labels or printed menus, expand **Read menu / label text**, choose **Ingredient label** or **Menu — dish names**, and select the printed language. Read the text, correct errors, and confirm it against the original photo before checking. Menu photos are screened as uncertain recipes; a dish name does not verify its actual ingredients.
 
 Photo recognition uses MobileNet v2 (full-width model, five candidate classes) on your device. It may recognize a sandwich or bread without identifying a specific regional recipe. Photo suggestions and recipe ingredients remain unconfirmed. It cannot see hidden ingredients or cross-contact. Unrecognized photos prompt for a dish name instead of producing a fabricated match. Recognition can be cancelled and retried. The model is released after one idle minute; a quick repeat scan reuses it.
 

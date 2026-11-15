@@ -102,7 +102,7 @@
   html+=`<p class="hint report-id">${esc(p.name||t('anonymous'))} · ${esc(r.checkedAt?new Date(r.checkedAt).toLocaleString(lang==='vi'?'vi-VN':'en-GB'):'')} · ${esc(C.version)}</p><button id="printCurrent" class="link">${t('print')}</button>`;box.innerHTML=html;
   $('#printCurrent').onclick=()=>window.print();
  }
- function setMode(m){mode=m;$('#labelMode').classList.toggle('selected',m==='label');$('#menuMode').classList.toggle('selected',m==='menu');$('#labelMode').setAttribute('aria-pressed',m==='label');$('#menuMode').setAttribute('aria-pressed',m==='menu');}
+ function setMode(m){mode=m;$('#ocrContent').value=m;$('#labelMode').classList.toggle('selected',m==='label');$('#menuMode').classList.toggle('selected',m==='menu');$('#labelMode').setAttribute('aria-pressed',m==='label');$('#menuMode').setAttribute('aria-pressed',m==='menu');}
  function runAnalysis(){
   const text=$('#textInput').value.trim();if(!text){notice(t('emptyInput'));return;}
   if(source==='vision'||source==='photoConfirmed')setMode('menu');
@@ -121,10 +121,10 @@
  function loadScript(url,timeout=45000){if(scripts.has(url))return scripts.get(url);const promise=new Promise((resolve,reject)=>{const s=document.createElement('script');const timer=setTimeout(()=>{s.remove();scripts.delete(url);reject(Error('timeout'));},timeout);s.src=url;s.onload=()=>{clearTimeout(timer);resolve();};s.onerror=()=>{clearTimeout(timer);s.remove();scripts.delete(url);reject(Error('load'));};document.head.append(s);});scripts.set(url,promise);return promise;}
  async function resized(file,maxSide=1800){const url=URL.createObjectURL(file);try{const image=new Image();image.src=url;await image.decode();const ratio=Math.min(1,maxSide/Math.max(image.width,image.height));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(image.width*ratio));canvas.height=Math.max(1,Math.round(image.height*ratio));canvas.getContext('2d').drawImage(image,0,0,canvas.width,canvas.height);return canvas;}finally{URL.revokeObjectURL(url);}}
  let worker=null,workerLanguage='',ocrGeneration=0,idleTimer=null,activeTimer=null;
- function setBusy(b){busy=b;$('#ocrBtn').disabled=b||!photo;$('#visionBtn').disabled=b||!photo;$('#imageInput').disabled=b;$('#ocrLanguage').disabled=b;$('#dishConfirmBtn').disabled=b;$('#dishCorrect').disabled=b;$('#analyzeBtn').disabled=b;}
+ function setBusy(b){busy=b;$('#ocrBtn').disabled=b||!photo;$('#visionBtn').disabled=b||!photo;for(const id of ['imageInput','cameraInput','takePhotoBtn','uploadPhotoBtn','ocrLanguage','ocrContent','dishConfirmBtn','dishCorrect','analyzeBtn','labelMode','menuMode'])$('#'+id).disabled=b;}
  async function releaseWorker(){clearTimeout(idleTimer);const w=worker;worker=null;workerLanguage='';if(w)try{await w.terminate();}catch{}}
  async function cancelOcr(){ocrGeneration++;clearTimeout(activeTimer);await releaseWorker();setBusy(false);$('#cancelOcr').hidden=true;$('#ocrStatus').textContent=t('cancelled');}
- async function runOcr(){if(!photo||busy)return;releaseVision();clearPhotoResult();setBusy(true);$('#cancelOcr').hidden=false;const generation=++ocrGeneration;$('#ocrStatus').textContent=t('loading');clearTimeout(idleTimer);
+ async function runOcr(){if(!photo||busy)return;const readingMode=$('#ocrContent').value==='menu'?'menu':'label';releaseVision();clearPhotoResult();setBusy(true);$('#cancelOcr').hidden=false;const generation=++ocrGeneration;$('#ocrStatus').textContent=t('loading');clearTimeout(idleTimer);
   activeTimer=setTimeout(()=>{if(generation===ocrGeneration)cancelOcr();},120000);
   try{
    if(!window.Tesseract)await loadScript('https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js');if(generation!==ocrGeneration)return;
@@ -132,7 +132,7 @@
    if(!worker){const created=await Tesseract.createWorker(wanted,1,{logger:m=>{if(generation===ocrGeneration)$('#ocrStatus').textContent=t(m.status==='recognizing text'?'reading':'loading')+(m.status==='recognizing text'?' '+Math.round(m.progress*100)+'%':'');}});if(generation!==ocrGeneration){await created.terminate();return;}worker=created;workerLanguage=wanted;}
    const canvas=await resized(photo);if(generation!==ocrGeneration)return;const {data}=await worker.recognize(canvas);canvas.width=canvas.height=1;if(generation!==ocrGeneration)return;
    if(!data.text.trim()){$('#ocrStatus').textContent=t('noText');return;}
-   $('#textInput').value=data.text.trim().slice(0,20000);source='ocr';setMode('label');$('#confirmOcr').checked=false;$('#ocrReview').hidden=false;$('#ocrStatus').textContent=t('ocrReady');updateCount();
+   $('#textInput').value=data.text.trim().slice(0,20000);source='ocr';setMode(readingMode);$('#confirmOcr').checked=false;$('#ocrReview').hidden=false;$('#ocrStatus').textContent=t('ocrReady');updateCount();
   }catch{if(generation===ocrGeneration){$('#ocrStatus').textContent=t('ocrFailed');await releaseWorker();}}
   finally{if(generation===ocrGeneration){clearTimeout(activeTimer);setBusy(false);$('#cancelOcr').hidden=true;idleTimer=setTimeout(releaseWorker,60000);}}
  }
@@ -185,12 +185,15 @@
  $('#customList').onclick=e=>{const b=e.target.closest('[data-remove]');if(b){draft.custom=draft.custom.filter(c=>c.id!==b.dataset.remove);renderCustom();renderCatalog();}};
  $('#saveProfile').onclick=()=>{profile=cleanProfile(draft);draft=copy(profile);const ok=write(KEYS.profile,profile);renderSummary();lastResult=null;renderResult(null);setView('screen');if(ok)notice(t('saved'));};
  $('#labelMode').onclick=()=>setMode('label');$('#menuMode').onclick=()=>setMode('menu');
+ $('#ocrContent').onchange=e=>setMode(e.target.value);
  $('#exampleBtn').onclick=()=>{$('#textInput').value=mode==='menu'?'Gỏi cuốn':lang==='vi'?'Thành phần: bột sữa, đường, casein. Có thể chứa đậu phộng và mè.':'Ingredients: milk powder, sugar, casein. May contain peanuts and sesame.';source='text';$('#ocrReview').hidden=true;updateCount();};
  $('#textInput').oninput=()=>{if(source==='ocr')$('#confirmOcr').checked=false;else source='text';updateCount();};$('#analyzeBtn').onclick=runAnalysis;
- $('#imageInput').onchange=e=>{const f=e.target.files[0];if(previewUrl)URL.revokeObjectURL(previewUrl);previewUrl=null;photo=null;$('#preview').hidden=true;clearPhotoResult();
-  if(!f){setBusy(false);return;}if(f.size>15*1024*1024||!/^image\/(jpeg|png|webp|bmp)$/.test(f.type)){notice(t('fileError'));e.target.value='';setBusy(false);return;}
-  photo=f;previewUrl=URL.createObjectURL(f);$('#preview').src=previewUrl;$('#preview').hidden=false;$('#preview').alt=t('choosePhoto');$('#visionResult').hidden=false;setBusy(false);notice('');
- };
+ function choosePhoto(e){const f=e.target.files[0];if(busy||!f)return;
+  if(f.size>15*1024*1024||!/^image\/(jpeg|png|webp|bmp)$/.test(f.type)){notice(t('fileError'));e.target.value='';return;}
+  if(previewUrl)URL.revokeObjectURL(previewUrl);photo=f;clearPhotoResult();previewUrl=URL.createObjectURL(f);$('#preview').src=previewUrl;$('#preview').hidden=false;$('#preview').alt=t('choosePhoto');$('#visionResult').hidden=false;setBusy(false);notice('');
+ }
+ $('#imageInput').onchange=choosePhoto;$('#cameraInput').onchange=choosePhoto;
+ for(const [button,input] of [['takePhotoBtn','cameraInput'],['uploadPhotoBtn','imageInput']])$('#'+button).onclick=()=>{if(busy)return;const picker=$('#'+input);picker.value='';picker.click();};
  $('#ocrBtn').onclick=runOcr;$('#cancelOcr').onclick=cancelOcr;$('#visionBtn').onclick=runVision;$('#cancelVision').onclick=cancelVision;
  $('#visionChoices').onclick=e=>{const b=e.target.closest('[data-vision-choice]');if(!b||busy)return;const choice=visionChoices[Number(b.dataset.visionChoice)];if(choice){$('#dishCorrect').value=label(choice.label);useDish(choice.text);}};
  $('#dishConfirmBtn').onclick=()=>useDish($('#dishCorrect').value,true);
